@@ -1,1 +1,745 @@
+<!DOCTYPE html>
+<html lang="en" id="top">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PassSmith — Free Secure Password Generator & Passphrase Maker</title>
+<meta name="description" content="PassSmith is a free online password generator with passphrase mode, bulk generation, live entropy and crack-time estimates. 100% client-side — nothing ever leaves your browser.">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root { --lime: #A3E635; }
+  html { scroll-behavior: smooth; }
+  body { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace; background:#0A0A0B; }
+  .font-mono2 { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .grid-bg {
+    background-image:
+      linear-gradient(rgba(163,230,53,0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(163,230,53,0.045) 1px, transparent 1px);
+    background-size: 34px 34px;
+  }
+  .scanlines::after {
+    content:""; position:absolute; inset:0; pointer-events:none; border-radius:inherit;
+    background: repeating-linear-gradient(0deg, rgba(255,255,255,0.022) 0 1px, transparent 1px 3px);
+  }
+  .glow { box-shadow: 0 0 24px rgba(163,230,53,0.18), 0 0 60px rgba(163,230,53,0.06); }
+  .blink { animation: blink 1.05s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .type-in { animation: typein .35s ease-out; }
+  @keyframes typein { from { opacity:0; transform: translateY(4px);} to { opacity:1; transform:none;} }
+  /* range slider */
+  input[type=range] { -webkit-appearance:none; appearance:none; height:6px; border-radius:9999px;
+    background: linear-gradient(to right, #A3E635 var(--fill,50%), #27272a var(--fill,50%)); outline:none; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; height:20px; border-radius:6px;
+    background:#A3E635; border:2px solid #0A0A0B; box-shadow:0 0 12px rgba(163,230,53,.8); cursor:pointer; }
+  input[type=range]::-moz-range-thumb { width:20px; height:20px; border-radius:6px; background:#A3E635;
+    border:2px solid #0A0A0B; box-shadow:0 0 12px rgba(163,230,53,.8); cursor:pointer; }
+  /* checkbox as [x] */
+  .ck { display:inline-flex; align-items:center; gap:.5rem; cursor:pointer; user-select:none;
+    padding:.45rem .7rem; border:1px solid #3f3f46; border-radius:.5rem; background:#111113; transition:.15s; }
+  .ck:hover { border-color:#A3E635; }
+  .ck input { accent-color:#A3E635; width:1rem; height:1rem; cursor:pointer; }
+  .tabbtn { transition:.15s; }
+  .tabbtn.active { background:#A3E635; color:#0A0A0B; box-shadow:0 0 16px rgba(163,230,53,.5); }
+  .pwd-scroll::-webkit-scrollbar { height:8px; }
+  .pwd-scroll::-webkit-scrollbar-thumb { background:#3f3f46; border-radius:8px; }
+  .meter-seg { transition: background .25s, box-shadow .25s; }
+  ::selection { background:#A3E635; color:#0A0A0B; }
+</style>
+</head>
+<body class="bg-[#0A0A0B] text-slate-200 antialiased">
+
+<!-- ============ STICKY HEADER ============ -->
+<header class="sticky top-0 z-50 border-b border-lime-400/20 bg-[#0A0A0B]/90 backdrop-blur">
+  <div class="mx-auto max-w-6xl px-4 sm:px-6 h-14 flex items-center justify-between">
+    <a href="#top" class="flex items-center gap-2 font-bold text-lg tracking-tight">
+      <span class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-lime-400 text-black text-sm font-black glow">&gt;_</span>
+      <span class="text-lime-300">Pass<span class="text-white">Smith</span></span>
+    </a>
+    <nav class="flex items-center gap-5 text-sm">
+      <a href="#top" class="text-slate-300 hover:text-lime-300 transition">Home</a>
+      <a href="https://fixoraa.tech" class="text-slate-300 hover:text-lime-300 transition">More Tools</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ============ TOP AD ============ -->
+<div class="no-print mx-auto max-w-6xl px-4 sm:px-6 pt-4" role="complementary" aria-label="Advertisement">
+  <div class="mx-auto text-center" style="max-width:728px">
+    <span class="block text-[10px] tracking-[0.18em] uppercase text-slate-400 mb-1.5">Advertisement</span>
+    <div class="flex justify-center overflow-hidden">
+      <div class="origin-top scale-[0.44] sm:scale-100 shrink-0">
+        <script>
+          atOptions = { 'key' : '4e68ac77881c17fe128a46565d9a4e8c', 'format' : 'iframe', 'height' : 90, 'width' : 728, 'params' : {} };
+        </script>
+        <script src="https://www.highrevenueformat.com/4e68ac77881c17fe128a46565d9a4e8c/invoke.js"></script>
+      </div>
+    </div>
+  </div>
+</div>
+
+<main class="grid-bg">
+  <!-- ============ BADGES ============ -->
+  <div class="mx-auto max-w-6xl px-4 sm:px-6 pt-6 flex flex-wrap items-center gap-3">
+    <span class="inline-flex items-center gap-2 rounded-full border border-lime-400/40 bg-lime-400/10 px-4 py-1.5 text-xs font-bold tracking-widest uppercase text-lime-300">
+      <span class="w-2 h-2 rounded-full bg-lime-400 blink"></span> Unlimited Free Usage
+    </span>
+    <span class="inline-flex items-center gap-2 rounded-full border border-zinc-700 bg-zinc-900/60 px-4 py-1.5 text-xs text-slate-300">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#A3E635" stroke-width="2.4"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+      Generated locally — never leaves your browser
+    </span>
+  </div>
+
+  <!-- ============ TERMINAL WINDOW ============ -->
+  <section class="mx-auto max-w-4xl px-4 sm:px-6 py-8" aria-label="Password generator tool">
+    <div class="relative rounded-xl border border-lime-400/25 bg-[#101013] scanlines glow overflow-hidden">
+      <!-- title bar -->
+      <div class="flex items-center gap-2 border-b border-zinc-800 bg-[#151518] px-4 py-3">
+        <span class="w-3 h-3 rounded-full bg-red-500/90"></span>
+        <span class="w-3 h-3 rounded-full bg-yellow-400/90"></span>
+        <span class="w-3 h-3 rounded-full bg-lime-400/90"></span>
+        <span class="ml-3 text-xs text-slate-400 truncate">passsmith@secure: ~/vault <span class="text-lime-400/70">— zsh</span></span>
+        <span class="ml-auto hidden sm:inline text-[10px] text-zinc-600 tracking-widest">CSPRNG · crypto.getRandomValues</span>
+      </div>
+
+      <div class="p-4 sm:p-6 space-y-6">
+        <!-- mode tabs -->
+        <div class="flex flex-wrap gap-2" role="tablist" aria-label="Generation mode">
+          <button id="tabRandom" class="tabbtn active rounded-md border border-lime-400/40 px-4 py-2 text-sm font-bold text-lime-200" role="tab" aria-selected="true">~/ random</button>
+          <button id="tabPhrase" class="tabbtn rounded-md border border-zinc-700 px-4 py-2 text-sm font-bold text-slate-300" role="tab" aria-selected="false">~/ passphrase</button>
+          <button id="tabBulk" class="tabbtn rounded-md border border-zinc-700 px-4 py-2 text-sm font-bold text-slate-300" role="tab" aria-selected="false">~/ bulk ×10</button>
+        </div>
+
+        <!-- RANDOM PANEL -->
+        <div id="panelRandom" class="space-y-5">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <label for="lenRange" class="text-sm text-slate-300"><span class="text-lime-400">$</span> length <span class="text-zinc-500">--len</span></label>
+              <span class="rounded bg-zinc-900 border border-zinc-700 px-3 py-1 text-lime-300 font-bold" id="lenVal">20</span>
+            </div>
+            <input id="lenRange" type="range" min="4" max="128" value="20" class="w-full" aria-label="Password length">
+            <div class="flex justify-between text-[10px] text-zinc-600 mt-1"><span>4</span><span>128</span></div>
+          </div>
+          <div>
+            <p class="text-sm text-slate-300 mb-2"><span class="text-lime-400">$</span> character sets <span class="text-zinc-500">--sets</span></p>
+            <div class="flex flex-wrap gap-2">
+              <label class="ck text-sm"><input type="checkbox" id="setUpper" checked> <span class="text-lime-300">[A–Z]</span> uppercase</label>
+              <label class="ck text-sm"><input type="checkbox" id="setLower" checked> <span class="text-lime-300">[a–z]</span> lowercase</label>
+              <label class="ck text-sm"><input type="checkbox" id="setDigit" checked> <span class="text-lime-300">[0–9]</span> digits</label>
+              <label class="ck text-sm"><input type="checkbox" id="setSymbol" checked> <span class="text-lime-300">[!@#…]</span> symbols</label>
+            </div>
+          </div>
+          <div>
+            <p class="text-sm text-slate-300 mb-2"><span class="text-lime-400">$</span> hardening flags</p>
+            <div class="flex flex-wrap gap-2">
+              <label class="ck text-sm" title="Removes easily-confused glyphs: I l 1 | O 0"><input type="checkbox" id="optAmbiguous" checked> <span class="text-lime-300">--no-ambiguous</span> <span class="text-zinc-500 text-xs">drop I l 1 O 0</span></label>
+              <label class="ck text-sm" title="No character appears twice"><input type="checkbox" id="optNoRepeat"> <span class="text-lime-300">--no-repeat</span> <span class="text-zinc-500 text-xs">unique chars</span></label>
+            </div>
+          </div>
+        </div>
+
+        <!-- PASSPHRASE PANEL -->
+        <div id="panelPhrase" class="space-y-5 hidden">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <label for="wordRange" class="text-sm text-slate-300"><span class="text-lime-400">$</span> words <span class="text-zinc-500">--words</span></label>
+              <span class="rounded bg-zinc-900 border border-zinc-700 px-3 py-1 text-lime-300 font-bold" id="wordVal">4</span>
+            </div>
+            <input id="wordRange" type="range" min="3" max="8" value="4" class="w-full" aria-label="Number of words">
+            <div class="flex justify-between text-[10px] text-zinc-600 mt-1"><span>3</span><span>8</span></div>
+          </div>
+          <div>
+            <p class="text-sm text-slate-300 mb-2"><span class="text-lime-400">$</span> separator <span class="text-zinc-500">--sep</span></p>
+            <div class="flex flex-wrap gap-2" id="sepGroup">
+              <button data-sep="-" class="sepbtn tabbtn active rounded-md border border-zinc-700 px-3 py-1.5 text-sm text-slate-300">dash -</button>
+              <button data-sep=" " class="sepbtn tabbtn rounded-md border border-zinc-700 px-3 py-1.5 text-sm text-slate-300">space</button>
+              <button data-sep="_" class="sepbtn tabbtn rounded-md border border-zinc-700 px-3 py-1.5 text-sm text-slate-300">under _</button>
+              <button data-sep="." class="sepbtn tabbtn rounded-md border border-zinc-700 px-3 py-1.5 text-sm text-slate-300">dot .</button>
+              <button data-sep="" class="sepbtn tabbtn rounded-md border border-zinc-700 px-3 py-1.5 text-sm text-slate-300">none</button>
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <label class="ck text-sm"><input type="checkbox" id="optCapitalize"> <span class="text-lime-300">--capitalize</span> <span class="text-zinc-500 text-xs">Title Case</span></label>
+            <label class="ck text-sm"><input type="checkbox" id="optAddNumber" checked> <span class="text-lime-300">--add-number</span> <span class="text-zinc-500 text-xs">append digit</span></label>
+          </div>
+          <p class="text-xs text-zinc-500">Words are drawn from a built-in 550-word list using your browser's cryptographic RNG — memorable, yet high-entropy.</p>
+        </div>
+
+        <!-- generate button -->
+        <div class="flex flex-wrap gap-3 items-center">
+          <button id="btnGenerate" class="rounded-md bg-lime-400 px-6 py-3 font-black text-black tracking-wide hover:bg-lime-300 active:scale-95 transition glow">
+            ./generate <span class="opacity-60">⏎</span>
+          </button>
+          <span id="cmdEcho" class="text-xs text-zinc-500 truncate max-w-full"></span>
+        </div>
+        <p id="formError" class="hidden text-sm text-red-400" role="alert"></p>
+
+        <!-- output -->
+        <div class="rounded-lg border border-zinc-800 bg-[#0A0A0B] p-4">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs text-zinc-500 tracking-widest uppercase">output</span>
+            <div class="flex gap-2">
+              <button id="btnCopy" class="rounded border border-lime-400/40 px-3 py-1.5 text-xs font-bold text-lime-300 hover:bg-lime-400/10 transition">⧉ copy</button>
+              <button id="btnRegen" class="rounded border border-zinc-700 px-3 py-1.5 text-xs font-bold text-slate-300 hover:border-lime-400/50 hover:text-lime-300 transition">↻ regen</button>
+            </div>
+          </div>
+          <div class="pwd-scroll overflow-x-auto">
+            <p class="whitespace-nowrap text-lg sm:text-xl text-lime-300 break-all"><span class="text-zinc-600">$ </span><span id="pwdOut" class="type-in">press ./generate ⏎</span><span class="blink text-lime-400">▊</span></p>
+          </div>
+          <!-- strength meter -->
+          <div class="mt-4">
+            <div class="flex items-center justify-between text-xs mb-1.5">
+              <span class="text-zinc-500">strength</span>
+              <span id="strengthLabel" class="font-bold text-zinc-500">—</span>
+            </div>
+            <div class="flex gap-1" id="meter" aria-hidden="true">
+              <div class="meter-seg h-2 flex-1 rounded bg-zinc-800"></div>
+              <div class="meter-seg h-2 flex-1 rounded bg-zinc-800"></div>
+              <div class="meter-seg h-2 flex-1 rounded bg-zinc-800"></div>
+              <div class="meter-seg h-2 flex-1 rounded bg-zinc-800"></div>
+              <div class="meter-seg h-2 flex-1 rounded bg-zinc-800"></div>
+              <div class="meter-seg h-2 flex-1 rounded bg-zinc-800"></div>
+              <div class="meter-seg h-2 flex-1 rounded bg-zinc-800"></div>
+              <div class="meter-seg h-2 flex-1 rounded bg-zinc-800"></div>
+            </div>
+          </div>
+          <!-- stats -->
+          <div class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+            <div class="rounded-md border border-zinc-800 bg-[#101013] px-2 py-3">
+              <p class="text-[10px] uppercase tracking-widest text-zinc-500 mb-1">entropy</p>
+              <p class="text-lime-300 font-bold text-sm sm:text-base" id="statEntropy">—</p>
+            </div>
+            <div class="rounded-md border border-zinc-800 bg-[#101013] px-2 py-3">
+              <p class="text-[10px] uppercase tracking-widest text-zinc-500 mb-1">crack time</p>
+              <p class="text-lime-300 font-bold text-sm sm:text-base" id="statCrack">—</p>
+            </div>
+            <div class="rounded-md border border-zinc-800 bg-[#101013] px-2 py-3">
+              <p class="text-[10px] uppercase tracking-widest text-zinc-500 mb-1">pool size</p>
+              <p class="text-lime-300 font-bold text-sm sm:text-base" id="statPool">—</p>
+            </div>
+            <div class="rounded-md border border-zinc-800 bg-[#101013] px-2 py-3">
+              <p class="text-[10px] uppercase tracking-widest text-zinc-500 mb-1">length</p>
+              <p class="text-lime-300 font-bold text-sm sm:text-base" id="statLen">—</p>
+            </div>
+          </div>
+          <p class="mt-3 text-[11px] text-zinc-600" id="crackDetail">Crack-time assumes 10 billion guesses/sec (modern GPU cluster, offline attack). Average case = half the keyspace.</p>
+        </div>
+
+        <!-- BULK PANEL -->
+        <div id="panelBulk" class="hidden rounded-lg border border-zinc-800 bg-[#0A0A0B] p-4">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <span class="text-xs text-zinc-500 tracking-widest uppercase">bulk output — 10 passwords <span class="text-zinc-600">(current settings)</span></span>
+            <button id="btnCopyAll" class="rounded border border-lime-400/40 px-3 py-1.5 text-xs font-bold text-lime-300 hover:bg-lime-400/10 transition">⧉ copy all</button>
+          </div>
+          <ol id="bulkList" class="space-y-1.5 text-sm"></ol>
+          <p class="mt-3 text-[11px] text-zinc-600">Tip: bulk mode reuses your random-mode settings above — switch back to the <span class="text-lime-300">~/ random</span> tab to tune length or character sets.</p>
+        </div>
+
+        <!-- HISTORY -->
+        <div class="rounded-lg border border-zinc-800 bg-[#0A0A0B] p-4">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs text-zinc-500 tracking-widest uppercase">session history <span class="text-zinc-600">(this browser only)</span></span>
+            <button id="btnClearHist" class="text-xs text-zinc-500 hover:text-red-400 transition">clear</button>
+          </div>
+          <ul id="histList" class="space-y-1.5 text-sm"></ul>
+          <p id="histEmpty" class="text-xs text-zinc-600">No passwords generated yet this session. History is stored only in your browser's localStorage.</p>
+        </div>
+
+        <p class="text-[11px] text-zinc-600 flex items-start gap-2">
+          <svg class="shrink-0 mt-0.5" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#A3E635" stroke-width="2.4"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+          Privacy: every password is forged with <span class="text-slate-400">crypto.getRandomValues</span> — your browser's cryptographically secure RNG. This page makes zero network requests for generation; your passwords are generated locally and never leave your browser.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ BOTTOM AD ============ -->
+  <div class="no-print mx-auto max-w-6xl px-4 sm:px-6 pb-4" role="complementary" aria-label="Advertisement">
+    <div class="mx-auto text-center" style="max-width:728px">
+      <span class="block text-[10px] tracking-[0.18em] uppercase text-slate-400 mb-1.5">Advertisement</span>
+      <div class="flex justify-center overflow-hidden">
+        <script async src="https://js.wpadmngr.com/static/adManager.js" data-admpid="464498"></script>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ============ SEO ARTICLE ============ -->
+<article id="seo-article" class="mx-auto max-w-4xl px-4 sm:px-6 py-10 text-slate-300 leading-relaxed">
+  <h1 class="text-2xl sm:text-3xl font-bold text-white mb-2">The Complete Guide to Strong Passwords: Generation, Entropy, and Passphrases</h1>
+  <p class="text-sm text-zinc-500 mb-8">By the PassSmith security desk · Last updated September 2026</p>
+
+  <h2 class="text-xl font-bold text-lime-300 mt-8 mb-3">Why your password is probably the weakest link</h2>
+  <p class="mb-4">Every year, security researchers publish the same depressing league table: the most common passwords on the internet are still variations of "123456", "password", and "qwerty". Attackers know this. Modern credential-stuffing attacks do not bother guessing clever combinations first — they simply try the few million passwords that humans actually use, across thousands of websites, at machine speed. If your password is a word, a name, a date, or a predictable pattern, it falls in the first wave. The uncomfortable truth is that human brains are terrible random-number generators. We pick what feels random — a capital letter at the start, a number at the end, an exclamation mark for decoration — and millions of other people pick the same thing. A password generator exists to remove the human from the randomness equation entirely. Instead of inventing something that feels secure, you let a cryptographic random-number generator assemble characters with no pattern, no memory, and no bias. The result looks like nonsense precisely because it is: every position is independent of every other position, and that independence is what makes brute-force guessing astronomically expensive.</p>
+
+  <h2 class="text-xl font-bold text-lime-300 mt-8 mb-3">How PassSmith forges a password</h2>
+  <p class="mb-4">PassSmith never invents its own randomness. It asks your browser for it. The Web Crypto API — specifically the <span class="text-slate-100">crypto.getRandomValues()</span> function — draws bytes from the operating system's cryptographically secure pseudorandom number generator, the same source of entropy your browser uses for TLS session keys. This matters because the older <span class="text-slate-100">Math.random()</span> function found in tutorials was designed for games and animations, not security; its output can be predictable if an attacker observes enough of it. PassSmith maps those secure bytes onto your chosen character sets using rejection sampling, a technique that discards any byte value that would introduce modulo bias, so every character in the pool has an exactly equal chance of appearing. When you enable character sets, the generator also guarantees coverage: it first places one character from each enabled set, then fills the remaining positions, then shuffles the whole string with a Fisher–Yates shuffle driven by the same secure source. That means the guaranteed uppercase letter is never sitting smugly at the front where an attacker would expect it. Everything happens inside your browser tab. No request is sent anywhere, no server logs anything, and closing the tab leaves no trace beyond the optional history you can clear with one click.</p>
+
+  <h2 class="text-xl font-bold text-lime-300 mt-8 mb-3">Random strings vs. memorable passphrases</h2>
+  <p class="mb-4">There are two philosophies of password creation, and PassSmith speaks both fluently. The classic approach is a random string: twenty characters drawn from upper and lower case, digits, and symbols. It is maximally compact — every character carries several bits of entropy — but it is also maximally hostile to human memory, which is why people either write it on a sticky note or reuse it everywhere, defeating the point. The alternative is the passphrase: several ordinary words strung together, like "correct horse battery staple", the famous example from a well-known webcomic about password strength. A passphrase trades per-character density for length and memorability. Four random words from a 200-word list give roughly 30 bits of entropy each from the word choice alone, and a six-word passphrase lands near 46 bits — comparable to a strong random password, but something you can actually type from memory while looking at a login screen across the room. PassSmith's passphrase mode draws words with the same cryptographic RNG, lets you pick a separator (dash, space, underscore, dot, or none), optionally capitalizes each word, and can append a random digit for sites with fussy complexity rules. The honest guidance: use random strings for accounts behind a password manager, where you never need to remember or type them, and use passphrases for the handful of secrets you must carry in your head — your master password, your device PIN-adjacent secrets, your disk-encryption passphrase.</p>
+
+  <h2 class="text-xl font-bold text-lime-300 mt-8 mb-3">Entropy: the one number that measures password strength</h2>
+  <p class="mb-4">Forget "password strength meters" that reward you for adding an exclamation mark. The serious measure of a password's resistance to guessing is entropy, expressed in bits. The formula is disarmingly simple: entropy equals length multiplied by the base-2 logarithm of the pool size. A 20-character password drawn from 94 possible characters (upper, lower, digits, symbols) has about 131 bits of entropy. What does that mean in practice? It means an attacker guessing at random would need, on average, to try half of all 2^131 possibilities — a number so large that writing it out requires 40 digits. Every additional bit doubles the attacker's work, which is why length beats complexity: adding one character to a lowercase-only password adds about 4.7 bits, while swapping a letter for a symbol in a short password adds far less than people imagine. PassSmith displays the entropy of everything it generates, live, so you can watch the number climb as you drag the length slider. As a rule of thumb used by security practitioners: anything under 40 bits is weak, 40 to 60 bits is fair, 60 to 80 is strong, 80 to 100 is very strong, and above 100 bits is effectively uncrackable by brute force with any technology on the horizon. The passphrase math works the same way, except the "pool" is the word list and the "length" is the word count — six words from a 200-word list is about 46 bits before separators and capitalization are even counted.</p>
+
+  <h2 class="text-xl font-bold text-lime-300 mt-8 mb-3">From entropy to crack time: what the estimate really assumes</h2>
+  <p class="mb-4">Entropy in bits is precise but abstract, so PassSmith translates it into a crack-time estimate: how long a brute-force attack would take on average. The estimate assumes an offline attack running at ten billion guesses per second — roughly what a modern multi-GPU rig can sustain against a fast hash. Under that assumption, the average crack time is half the keyspace divided by the guess rate. A 12-character mixed password at about 79 bits falls in roughly six months; push it to 16 characters and you are suddenly past forty thousand years. These numbers come with honest caveats that any reputable tool should state. First, they assume pure brute force; real attackers try dictionaries, leaked-password lists, and mangling rules first, which is why "P@ssw0rd2024!" crumbles in seconds despite looking complex. Second, they assume a fast hash — if a site stores passwords with a slow, salted algorithm like bcrypt or Argon2, the effective guess rate collapses by orders of magnitude and even modest passwords survive. Third, online guessing against a live login page is throttled by rate limits and lockouts, so the offline scenario is the conservative, worst-case model. The estimate's real value is comparative: it shows you, instantly, that two extra characters buy more security than any amount of symbol-swapping cleverness.</p>
+
+  <h2 class="text-xl font-bold text-lime-300 mt-8 mb-3">The ambiguous-character problem nobody talks about</h2>
+  <p class="mb-4">Ask anyone who has ever read a password over the phone, or squinted at one in a small terminal font, which characters cause the most grief. The hall of shame is short: capital I, lowercase l, the digit 1, capital O, and the digit 0. In many fonts, "Il1" is a trio of vertical strokes and "O0" a pair of ovals — indistinguishable. A password you cannot transcribe accurately is a password that locks you out, generates a support ticket, or gets written down somewhere unsafe. That is why PassSmith ships with "exclude ambiguous characters" enabled by default, stripping those confusables from the pool. The entropy cost is tiny — removing six characters from a 94-character pool shaves about half a bit per character — and the usability gain is enormous. A related option, "no repeat characters", guarantees every character appears at most once, which is handy for PIN-style codes and some legacy systems with odd constraints, though you should know it slightly reduces the pool for very long passwords (a 40-character password from a 94-character pool without repeats is still overwhelmingly strong). Small flags, real-world difference: the best password is one you can actually use without friction.</p>
+
+  <h2 class="text-xl font-bold text-lime-300 mt-8 mb-3">Bulk generation: ten passwords in one click</h2>
+  <p class="mb-4">Most generator tools make you click "generate" ten times to get ten passwords, copying each one before it vanishes. PassSmith's bulk mode produces ten passwords at once from your current settings, each with its own copy button plus a copy-all option that drops the whole batch onto your clipboard. This is not a gimmick — it matches how passwords are actually provisioned in the real world. Onboarding a team means creating accounts across a dozen services. Rotating credentials after a scare means replacing every password at once. Setting up a homelab means credentials for the router, the NAS, the media server, the containers, and the Wi-Fi guest network. Developers seeding test environments need dummy credentials that still look realistic. In each case, the workflow is "generate a batch, paste them where they belong, done" — and because every password in the batch is drawn independently from the cryptographic RNG, there is no relationship between them for an attacker to exploit. Bulk mode reuses your random-mode configuration, so set the length and character sets once, then harvest.</p>
+
+  <h2 class="text-xl font-bold text-lime-300 mt-8 mb-3">Passwords in a password-manager world</h2>
+  <p class="mb-4">The single highest-leverage security upgrade most people can make is not a longer password — it is a password manager. Reusing one decent password across fifty sites means a breach at the weakest site hands attackers the keys to the other forty-nine, and breach compilations containing billions of credentials circulate freely. A manager inverts the economics: it remembers a unique, 20-plus-character random password per site, so you only need to memorize one strong master passphrase — ideally a six-word diceware-style passphrase, exactly what PassSmith's passphrase mode produces. Turn on two-factor authentication everywhere it is offered, prefer authenticator apps or hardware keys over SMS codes, and treat your email account as the crown jewels, since password resets flow through it. For the accounts you cannot put behind a manager — device encryption, the manager's own master password — a memorized passphrase is the right tool. Everything else should be random, unique, and forgotten by you on purpose. That is the entire philosophy in one sentence: humans remember a few passphrases; machines remember everything else.</p>
+
+  <h2 class="text-xl font-bold text-lime-300 mt-8 mb-3">A note on privacy and trust</h2>
+  <p class="mb-4">A password generator asks for an unusual kind of trust: you are letting a webpage create the keys to your digital life. The only sane architecture for that trust is verifiable client-side generation. PassSmith's generation code runs entirely in your browser, uses the platform's secure random source, and sends nothing anywhere — there is no account, no analytics event carrying your password, no server to be breached. The optional history lives in your browser's localStorage, masked by default, and can be wiped instantly. If you are ever unsure about any generator, the test is simple: open your browser's developer tools, watch the network tab while generating, and confirm silence. Healthy paranoia, satisfied. Combine that with unique passwords per site, a reputable password manager, and two-factor authentication, and you have closed the easiest doors attackers walk through every day.</p>
+</article>
+
+<!-- ============ FAQS ============ -->
+<section class="mx-auto max-w-4xl px-4 sm:px-6 pb-12" aria-label="Frequently asked questions">
+  <h2 class="text-xl font-bold text-white mb-5"><span class="text-lime-400">$</span> faq <span class="text-zinc-600">--help</span></h2>
+  <div class="space-y-3 text-sm">
+    <details class="rounded-lg border border-zinc-800 bg-[#101013] p-4">
+      <summary class="cursor-pointer font-bold text-slate-100">Is PassSmith really free? Are there limits?</summary>
+      <p class="mt-2 text-slate-400">Yes — unlimited free usage, no signup, no paywall, no watermark. Generate as many passwords or passphrases as you like, in any quantity, forever.</p>
+    </details>
+    <details class="rounded-lg border border-zinc-800 bg-[#101013] p-4">
+      <summary class="cursor-pointer font-bold text-slate-100">Do my generated passwords leave my browser?</summary>
+      <p class="mt-2 text-slate-400">No. Every password is generated locally with your browser's cryptographically secure RNG (crypto.getRandomValues). The page makes zero network requests during generation, and nothing is ever transmitted or stored on a server.</p>
+    </details>
+    <details class="rounded-lg border border-zinc-800 bg-[#101013] p-4">
+      <summary class="cursor-pointer font-bold text-slate-100">Should I use a random password or a passphrase?</summary>
+      <p class="mt-2 text-slate-400">Use random passwords for accounts stored in a password manager (you never type them), and memorable passphrases for the few secrets you must remember — like your master password or disk encryption. PassSmith offers both modes.</p>
+    </details>
+    <details class="rounded-lg border border-zinc-800 bg-[#101013] p-4">
+      <summary class="cursor-pointer font-bold text-slate-100">What does the entropy readout mean?</summary>
+      <p class="mt-2 text-slate-400">Entropy, in bits, measures how many guesses an attacker needs on average: length × log₂(pool size). Higher is stronger — above 80 bits is very strong, and above 100 bits is effectively uncrackable by brute force.</p>
+    </details>
+    <details class="rounded-lg border border-zinc-800 bg-[#101013] p-4">
+      <summary class="cursor-pointer font-bold text-slate-100">How is the crack-time estimate calculated?</summary>
+      <p class="mt-2 text-slate-400">It divides half the keyspace (the average brute-force case) by 10 billion guesses per second, approximating a modern GPU cluster attacking an offline hash. It is a conservative worst-case model; rate-limited online logins are far slower to attack.</p>
+    </details>
+    <details class="rounded-lg border border-zinc-800 bg-[#101013] p-4">
+      <summary class="cursor-pointer font-bold text-slate-100">Why exclude ambiguous characters?</summary>
+      <p class="mt-2 text-slate-400">Characters like I, l, 1, O, and 0 look identical in many fonts, causing transcription errors when you read or type a password. Excluding them costs almost no entropy but removes a real-world source of lockouts.</p>
+    </details>
+  </div>
+</section>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {"@type": "Question", "name": "Is PassSmith really free? Are there limits?", "acceptedAnswer": {"@type": "Answer", "text": "Yes — unlimited free usage, no signup, no paywall, no watermark. Generate as many passwords or passphrases as you like, in any quantity, forever."}},
+    {"@type": "Question", "name": "Do my generated passwords leave my browser?", "acceptedAnswer": {"@type": "Answer", "text": "No. Every password is generated locally with your browser's cryptographically secure RNG (crypto.getRandomValues). The page makes zero network requests during generation, and nothing is ever transmitted or stored on a server."}},
+    {"@type": "Question", "name": "Should I use a random password or a passphrase?", "acceptedAnswer": {"@type": "Answer", "text": "Use random passwords for accounts stored in a password manager (you never type them), and memorable passphrases for the few secrets you must remember — like your master password or disk encryption. PassSmith offers both modes."}},
+    {"@type": "Question", "name": "What does the entropy readout mean?", "acceptedAnswer": {"@type": "Answer", "text": "Entropy, in bits, measures how many guesses an attacker needs on average: length x log2(pool size). Higher is stronger — above 80 bits is very strong, and above 100 bits is effectively uncrackable by brute force."}},
+    {"@type": "Question", "name": "How is the crack-time estimate calculated?", "acceptedAnswer": {"@type": "Answer", "text": "It divides half the keyspace (the average brute-force case) by 10 billion guesses per second, approximating a modern GPU cluster attacking an offline hash. It is a conservative worst-case model; rate-limited online logins are far slower to attack."}},
+    {"@type": "Question", "name": "Why exclude ambiguous characters?", "acceptedAnswer": {"@type": "Answer", "text": "Characters like I, l, 1, O, and 0 look identical in many fonts, causing transcription errors when you read or type a password. Excluding them costs almost no entropy but removes a real-world source of lockouts."}}
+  ]
+}
+</script>
+
+<footer class="border-t border-zinc-800/80">
+  <div class="mx-auto max-w-6xl px-4 sm:px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-zinc-600">
+    <span><span class="text-lime-400 font-bold">&gt;_</span> PassSmith — forge passwords like a smith.</span>
+    <span>100% client-side · no tracking · no signup</span>
+  </div>
+</footer>
+
+<script id="core-logic">
+/* PassSmith core — pure logic, no DOM. Safe to unit-test in Node. */
+'use strict';
+
+const WORDS = ("amber anchor angle april arbor attic badge baker basic batch beach beard beast bench berry birth blade bless blind block bloom board bonus boost booth bound brain brand brave bread break brick bride brief bring broad broke brown brush build bunch buyer cabin cable calm canvas canyon cargo carry catch cause chain chair charm chart chase cheap check cheese chest chief child choir choose civil claim class clean clear clerk click cliff climb clock close cloth cloud coach coast color comet coral couch count court cover crack craft crash crazy cream crime cross crowd crown crude crush curve cycle daily dance death delay depth diary digit dinner dodge doing donor doubt dozen draft drain drama dream dress dried drift drink drive drone droop eager early earth eight elbow elder elect elite empty enemy engine enter entry equal error essay event every exact exist extra fable faint fairy faith fancy fatal fault favor feast fence fever fiber field fiery fifty fight final first flame flash fleet flesh float flock floor flour fluid focus force forge forth forty forum found frame frank fresh friend frost fruit funny giant given glass globe glory gloves grade grain grand grant grape grass great green greet grief group grove guard guess guest guide habit happy heart heavy hello honey honor horse hotel house human hurry ideal image index inner input issue ivory jewel joint judge juice jungle karma kayak label labor large laser later laugh layer learn least leave legal lemon level light limit linen liver local logic loose lucky lunar lunch magic major maker mango march match material maybe mayor meant medal media mercy merge merit merry metal meter micro midst might minor minus model money month moral motor mount mouse mouth movie music nasty never night noble noise north novel number ocean offer often older olive onion opera orbit order other ought outer owner paint panel paper party peace penny phase phone photo piano piece pilot pitch pizza place plain plane plant plate plaza point pound power press price pride prime print prize proof proud prove pulse punch pupil queen quick quiet quilt quite radio raise rally ranch range rapid ratio reach ready realm rebel refer renew reply rider right river roast robot rocket roman rough round route royal rural salad scale scene score scout scrap screw sense serve seven shade shaft shake shall shape share sharp sheep sheet shelf shell shift shine shirt shock shore short shout shown sight silly since sixth sixty skill skirt sleep slice slide slope small smart smell smile smoke snake solar solid solve sorry sound south space spare spark speak speed spell spend spice split spoke sport staff stage stair stand start state steam steel steep stick still stock stone stood store storm story strip style sugar sunny super sweet table taken taste teach teeth thank their theme there these thick thing third those three threw throw thumb tiger tight tired title today token tooth topic total touch tough tower town trace track trade trail train treat trend trial tribe trick troop truck truly trust truth twice under union unite until upper upset urban usual valid value video visit vital vivid voice voter waste watch water weave wheel where which while white whole whose woman women world worry worth would wound write wrong wrote yacht year young youth zebra").split(" ");
+
+const CHARSETS = {
+  upper: "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+  lower: "abcdefghijklmnopqrstuvwxyz",
+  digit: "0123456789",
+  symbol: "!@#$%^&*()-_=+[]{};:,.<>?/~"
+};
+const AMBIGUOUS = "Il1O0";
+
+function stripAmbiguous(s) {
+  return s.split("").filter(c => !AMBIGUOUS.includes(c)).join("");
+}
+
+/* Rejection-sampled uniform int in [0, max) from a byte source. */
+function randIntFromBytes(max, getBytes) {
+  if (max <= 0 || !Number.isSafeInteger(max)) throw new Error("randInt: bad max");
+  const range = 4294967296;
+  const limit = range - (range % max);
+  let x;
+  do { x = getBytes(); } while (x >= limit);
+  return x % max;
+}
+
+function cryptoRandInt(max) {
+  const buf = new Uint32Array(1);
+  return randIntFromBytes(max, () => { crypto.getRandomValues(buf); return buf[0]; });
+}
+
+function buildCharset(opts) {
+  let pool = "";
+  const sets = [];
+  if (opts.upper) { const s = opts.excludeAmbiguous ? stripAmbiguous(CHARSETS.upper) : CHARSETS.upper; pool += s; sets.push(s); }
+  if (opts.lower) { const s = opts.excludeAmbiguous ? stripAmbiguous(CHARSETS.lower) : CHARSETS.lower; pool += s; sets.push(s); }
+  if (opts.digit) { const s = opts.excludeAmbiguous ? stripAmbiguous(CHARSETS.digit) : CHARSETS.digit; pool += s; sets.push(s); }
+  if (opts.symbol) { const s = opts.excludeAmbiguous ? stripAmbiguous(CHARSETS.symbol) : CHARSETS.symbol; pool += s; sets.push(s); }
+  const unique = [...new Set(pool.split(""))].join("");
+  if (!unique.length) throw new Error("Select at least one character set.");
+  return { pool: unique, sets };
+}
+
+function shuffleInPlace(arr, randInt) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = randInt(i + 1);
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function generatePassword(opts, randInt) {
+  randInt = randInt || cryptoRandInt;
+  const length = Math.floor(opts.length);
+  if (!Number.isFinite(length) || length < 1) throw new Error("Length must be a positive number.");
+  const { pool, sets } = buildCharset(opts);
+  if (opts.noRepeat && length > pool.length) throw new Error("Length exceeds unique characters available with no-repeat enabled.");
+  const out = [];
+  if (opts.noRepeat) {
+    const bag = shuffleInPlace(pool.split(""), randInt);
+    // guarantee coverage: first take one from each enabled set, then fill
+    const picked = [];
+    const used = new Set();
+    for (const s of sets) {
+      let c, guard = 0;
+      do { c = s[randInt(s.length)]; guard++; } while (used.has(c) && guard < 200);
+      if (used.has(c)) throw new Error("Cannot guarantee one character per set without repeats.");
+      picked.push(c); used.add(c);
+    }
+    for (const ch of bag) { if (picked.length >= length) break; if (!used.has(ch)) { picked.push(ch); used.add(ch); } }
+    return shuffleInPlace(picked, randInt).join("");
+  }
+  for (const s of sets) out.push(s[randInt(s.length)]);       // one from each enabled set
+  for (let i = out.length; i < length; i++) out.push(pool[randInt(pool.length)]);
+  return shuffleInPlace(out, randInt).join("");
+}
+
+function generatePassphrase(opts, randInt) {
+  randInt = randInt || cryptoRandInt;
+  const n = Math.floor(opts.words);
+  if (!Number.isFinite(n) || n < 1) throw new Error("Word count must be a positive number.");
+  const words = [];
+  for (let i = 0; i < n; i++) {
+    let w = WORDS[randInt(WORDS.length)];
+    if (opts.capitalize) w = w.charAt(0).toUpperCase() + w.slice(1);
+    words.push(w);
+  }
+  let phrase = words.join(opts.separator == null ? "-" : String(opts.separator));
+  if (opts.addNumber) phrase += (opts.separator === " " ? " " : (opts.separator || "")) + randInt(10);
+  return phrase;
+}
+
+function entropyBits(units, poolSize) {
+  if (!(units > 0) || !(poolSize > 1)) return 0;
+  return units * Math.log2(poolSize);
+}
+
+function crackSeconds(bits, guessesPerSec) {
+  guessesPerSec = guessesPerSec || 1e10;
+  if (!(bits > 0)) return 0;
+  if (bits >= 1024) return Infinity;
+  return Math.pow(2, bits - 1) / guessesPerSec;   // average case: half the keyspace
+}
+
+function formatDuration(sec) {
+  if (!isFinite(sec)) return "effectively forever";
+  if (sec < 1) return "instantly";
+  const units = [
+    ["year", 31557600], ["month", 2592000], ["day", 86400],
+    ["hour", 3600], ["minute", 60], ["second", 1]
+  ];
+  for (const [name, s] of units) {
+    if (sec >= s) {
+      const v = sec / s;
+      if (v >= 1e12) return "trillions of years";
+      if (v >= 1e9) return trimNum(v / 1e9) + " billion years";
+      if (v >= 1e6) return trimNum(v / 1e6) + " million years";
+      const r = v >= 100 ? Math.round(v) : trimNum(v);
+      return r + " " + name + (Number(r) === 1 ? "" : "s");
+    }
+  }
+  return "instantly";
+}
+function trimNum(v) { return String(Math.round(v * 100) / 100); }
+
+function strengthLabel(bits) {
+  if (bits < 40)  return { label: "Weak",        color: "#EF4444", segs: 2 };
+  if (bits < 60)  return { label: "Fair",        color: "#F59E0B", segs: 3 };
+  if (bits < 80)  return { label: "Strong",      color: "#A3E635", segs: 5 };
+  if (bits < 100) return { label: "Very strong", color: "#34D399", segs: 6 };
+  return { label: "Exceptional", color: "#A3E635", segs: 8 };
+}
+</script>
+<script>
+(function () {
+  "use strict";
+  const $ = id => document.getElementById(id);
+  const state = { mode: "random", sep: "-", last: "", bulk: [] };
+  const HIST_KEY = "passsmith-history-v1";
+
+  function sliderFill(el) {
+    const pct = (el.value - el.min) / (el.max - el.min) * 100;
+    el.style.setProperty("--fill", pct + "%");
+  }
+  ["lenRange", "wordRange"].forEach(id => { const el = $(id); sliderFill(el); el.addEventListener("input", () => sliderFill(el)); });
+
+  $("lenRange").addEventListener("input", e => $("lenVal").textContent = e.target.value);
+  $("wordRange").addEventListener("input", e => $("wordVal").textContent = e.target.value);
+
+  function setTab(mode) {
+    state.mode = mode;
+    const tabs = { random: $("tabRandom"), phrase: $("tabPhrase"), bulk: $("tabBulk") };
+    for (const k in tabs) {
+      const on = k === mode;
+      tabs[k].classList.toggle("active", on);
+      tabs[k].setAttribute("aria-selected", on);
+    }
+    $("panelRandom").classList.toggle("hidden", mode !== "random");
+    $("panelPhrase").classList.toggle("hidden", mode !== "phrase");
+    $("panelBulk").classList.toggle("hidden", mode !== "bulk");
+    if (mode === "bulk") renderBulk();
+  }
+  $("tabRandom").addEventListener("click", () => setTab("random"));
+  $("tabPhrase").addEventListener("click", () => setTab("phrase"));
+  $("tabBulk").addEventListener("click", () => setTab("bulk"));
+
+  document.querySelectorAll(".sepbtn").forEach(b => b.addEventListener("click", () => {
+    document.querySelectorAll(".sepbtn").forEach(x => x.classList.remove("active"));
+    b.classList.add("active");
+    state.sep = b.dataset.sep;
+  }));
+
+  function readOpts() {
+    if (state.mode === "phrase") {
+      return { kind: "phrase", words: +$("wordRange").value, separator: state.sep,
+               capitalize: $("optCapitalize").checked, addNumber: $("optAddNumber").checked };
+    }
+    return { kind: "random", length: +$("lenRange").value,
+      upper: $("setUpper").checked, lower: $("setLower").checked,
+      digit: $("setDigit").checked, symbol: $("setSymbol").checked,
+      excludeAmbiguous: $("optAmbiguous").checked, noRepeat: $("optNoRepeat").checked };
+  }
+
+  function cmdString(o) {
+    if (o.kind === "phrase")
+      return "$ passsmith gen --passphrase --words " + o.words + " --sep '" + (o.separator || "none") + "'" +
+        (o.capitalize ? " --capitalize" : "") + (o.addNumber ? " --add-number" : "");
+    const sets = (o.upper ? "U" : "") + (o.lower ? "L" : "") + (o.digit ? "D" : "") + (o.symbol ? "S" : "");
+    return "$ passsmith gen --len " + o.length + " --sets " + (sets || "none") +
+      (o.excludeAmbiguous ? " --no-ambiguous" : "") + (o.noRepeat ? " --no-repeat" : "");
+  }
+
+  function statsFor(o, text) {
+    let bits, poolSize, len;
+    if (o.kind === "phrase") {
+      poolSize = WORDS.length; len = o.words;
+      bits = entropyBits(o.words, WORDS.length) + (o.addNumber ? Math.log2(10) : 0);
+    } else {
+      const cs = buildCharset(o);
+      poolSize = cs.pool.length; len = o.length;
+      bits = entropyBits(o.length, poolSize);
+    }
+    return { bits, poolSize, len, crack: formatDuration(crackSeconds(bits)) };
+  }
+
+  function renderStats(o) {
+    const s = statsFor(o);
+    const st = strengthLabel(s.bits);
+    $("statEntropy").textContent = s.bits.toFixed(1) + " bits";
+    $("statCrack").textContent = s.crack;
+    $("statPool").textContent = s.poolSize.toLocaleString("en-US");
+    $("statLen").textContent = o.kind === "phrase" ? s.len + " words" : s.len + " chars";
+    const lbl = $("strengthLabel");
+    lbl.textContent = st.label + " · " + s.bits.toFixed(1) + " bits";
+    lbl.style.color = st.color;
+    document.querySelectorAll("#meter .meter-seg").forEach((seg, i) => {
+      if (i < st.segs) { seg.style.background = st.color; seg.style.boxShadow = "0 0 8px " + st.color; }
+      else { seg.style.background = ""; seg.style.boxShadow = ""; }
+    });
+  }
+
+  function showError(msg) {
+    const e = $("formError");
+    if (!msg) { e.classList.add("hidden"); e.textContent = ""; return; }
+    e.textContent = "✖ " + msg;
+    e.classList.remove("hidden");
+  }
+
+  function pushHistory(text) {
+    try {
+      const h = JSON.parse(localStorage.getItem(HIST_KEY) || "[]");
+      h.unshift({ t: text, at: Date.now() });
+      localStorage.setItem(HIST_KEY, JSON.stringify(h.slice(0, 8)));
+      renderHistory();
+    } catch (e) { /* storage unavailable — ignore */ }
+  }
+
+  function getHistory() {
+    try { return JSON.parse(localStorage.getItem(HIST_KEY) || "[]"); }
+    catch (e) { return []; }
+  }
+
+  function renderHistory() {
+    const h = getHistory();
+    const ul = $("histList");
+    ul.innerHTML = "";
+    $("histEmpty").style.display = h.length ? "none" : "";
+    h.forEach((item, i) => {
+      const li = document.createElement("li");
+      li.className = "flex items-center gap-2 rounded border border-zinc-800 bg-[#101013] px-3 py-1.5";
+      const masked = "•".repeat(Math.min(item.t.length, 24));
+      li.innerHTML =
+        '<span class="text-zinc-600 text-xs w-6 shrink-0">' + String(i + 1).padStart(2, "0") + '</span>' +
+        '<code class="flex-1 truncate text-slate-300 text-xs" data-full="' + escapeHtml(item.t) + '">' + masked + '</code>' +
+        '<button class="peek text-[11px] text-zinc-500 hover:text-lime-300">peek</button>' +
+        '<button class="cp text-[11px] text-zinc-500 hover:text-lime-300">copy</button>';
+      const code = li.querySelector("code");
+      li.querySelector(".peek").addEventListener("click", ev => {
+        const showing = code.textContent !== masked;
+        code.textContent = showing ? masked : item.t;
+        ev.target.textContent = showing ? "peek" : "hide";
+      });
+      li.querySelector(".cp").addEventListener("click", () => copyText(item.t, "History item copied"));
+      ul.appendChild(li);
+    });
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
+  function copyText(text, msg) {
+    const done = () => toast(msg || "Copied to clipboard");
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done));
+    } else fallbackCopy(text, done);
+  }
+  function fallbackCopy(text, done) {
+    const ta = document.createElement("textarea");
+    ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); done(); } catch (e) { toast("Copy failed — select manually"); }
+    document.body.removeChild(ta);
+  }
+
+  let toastTimer;
+  function toast(msg) {
+    let t = document.getElementById("toast");
+    if (!t) {
+      t = document.createElement("div");
+      t.id = "toast";
+      t.className = "fixed bottom-6 left-1/2 -translate-x-1/2 rounded-md bg-lime-400 text-black text-sm font-bold px-5 py-2.5 z-[60] glow";
+      document.body.appendChild(t);
+    }
+    t.textContent = "✓ " + msg;
+    t.style.display = "block";
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.style.display = "none", 1800);
+  }
+
+  function generateOnce() {
+    const o = readOpts();
+    showError("");
+    try {
+      const text = o.kind === "phrase" ? generatePassphrase(o) : generatePassword(o);
+      state.last = text;
+      const out = $("pwdOut");
+      out.textContent = text;
+      out.classList.remove("type-in"); void out.offsetWidth; out.classList.add("type-in");
+      $("cmdEcho").textContent = cmdString(o);
+      renderStats(o);
+      pushHistory(text);
+      return text;
+    } catch (err) {
+      showError(err.message);
+      return null;
+    }
+  }
+
+  function renderBulk() {
+    const ul = $("bulkList");
+    ul.innerHTML = "";
+    if (!state.bulk.length) {
+      ul.innerHTML = '<li class="text-xs text-zinc-600">Hit <span class="text-lime-300">./generate</span> while this tab is open to forge 10 passwords.</li>';
+      return;
+    }
+    state.bulk.forEach((p, i) => {
+      const li = document.createElement("li");
+      li.className = "flex items-center gap-2 rounded border border-zinc-800 bg-[#101013] px-3 py-1.5";
+      li.innerHTML =
+        '<span class="text-zinc-600 text-xs w-7 shrink-0">' + String(i + 1).padStart(2, "0") + '</span>' +
+        '<code class="flex-1 truncate text-lime-200 text-xs">' + escapeHtml(p) + '</code>' +
+        '<button class="text-[11px] text-zinc-500 hover:text-lime-300 shrink-0">copy</button>';
+      li.querySelector("button").addEventListener("click", () => copyText(p, "Password " + (i + 1) + " copied"));
+      ul.appendChild(li);
+    });
+  }
+
+  $("btnGenerate").addEventListener("click", () => {
+    if (state.mode === "bulk") {
+      const o = Object.assign(readOpts(), { kind: "random" });
+      // bulk always uses random-mode settings
+      o.upper = $("setUpper").checked; o.lower = $("setLower").checked;
+      o.digit = $("setDigit").checked; o.symbol = $("setSymbol").checked;
+      o.length = +$("lenRange").value;
+      o.excludeAmbiguous = $("optAmbiguous").checked; o.noRepeat = $("optNoRepeat").checked;
+      showError("");
+      try {
+        state.bulk = [];
+        for (let i = 0; i < 10; i++) state.bulk.push(generatePassword(o));
+        state.last = state.bulk[0];
+        $("pwdOut").textContent = state.bulk[0];
+        $("cmdEcho").textContent = cmdString(o) + " --count 10";
+        renderStats(o);
+        state.bulk.forEach(pushHistory);
+        renderBulk();
+        toast("10 passwords forged");
+      } catch (err) { showError(err.message); }
+      return;
+    }
+    generateOnce();
+  });
+
+  $("btnRegen").addEventListener("click", generateOnce);
+  $("btnCopy").addEventListener("click", () => {
+    if (!state.last) { toast("Generate a password first"); return; }
+    copyText(state.last, "Password copied");
+  });
+  $("btnCopyAll").addEventListener("click", () => {
+    if (!state.bulk.length) { toast("Nothing to copy yet"); return; }
+    copyText(state.bulk.join("\n"), "All 10 passwords copied");
+  });
+  $("btnClearHist").addEventListener("click", () => {
+    try { localStorage.removeItem(HIST_KEY); } catch (e) {}
+    renderHistory();
+    toast("History cleared");
+  });
+
+  // live stats preview as controls change
+  document.querySelectorAll("input[type=range], input[type=checkbox]").forEach(el =>
+    el.addEventListener("change", () => { try { renderStats(readOpts()); } catch (e) {} }));
+  document.querySelectorAll(".sepbtn").forEach(b => b.addEventListener("click", () => {
+    try { renderStats(readOpts()); } catch (e) {}
+  }));
+
+  renderHistory();
+  try { renderStats(readOpts()); } catch (e) {}
+})();
+</script>
+</body>
+</html>
 
